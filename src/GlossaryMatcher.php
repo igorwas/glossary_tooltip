@@ -18,6 +18,16 @@ class GlossaryMatcher {
   public const VOCABULARY = 'glossary';
 
   /**
+   * Characters that continue a word: letters, combining marks, digits.
+   */
+  protected const WORD_CHAR = '[\p{L}\p{M}\p{N}_]';
+
+  /**
+   * Scripts written without spaces, where word boundaries cannot be detected.
+   */
+  protected const NO_SPACE_SCRIPTS = '\p{Han}\p{Hiragana}\p{Katakana}\p{Thai}\p{Lao}\p{Khmer}\p{Myanmar}';
+
+  /**
    * Published terms keyed by lowercased name, or NULL if not loaded yet.
    *
    * @var array<string, \Drupal\taxonomy\TermInterface>|null
@@ -48,9 +58,9 @@ class GlossaryMatcher {
       $this->terms = [];
       /** @var \Drupal\taxonomy\TermInterface $term */
       foreach ($storage->loadMultiple($ids) as $term) {
-        $name = trim($term->getName());
-        if ($name !== '') {
-          $this->terms[mb_strtolower($name)] = $term;
+        $key = $this->normalize($term->getName());
+        if ($key !== '') {
+          $this->terms[$key] = $term;
         }
       }
     }
@@ -61,8 +71,14 @@ class GlossaryMatcher {
    * Returns the term for a matched string.
    */
   public function getTerm(string $match): ?TermInterface {
-    $key = mb_strtolower(preg_replace('/\s+/u', ' ', $match));
-    return $this->getTerms()[$key] ?? NULL;
+    return $this->getTerms()[$this->normalize($match)] ?? NULL;
+  }
+
+  /**
+   * Normalizes a term name or match for lookup: lowercase, single spaces.
+   */
+  protected function normalize(string $text): string {
+    return mb_strtolower(trim(preg_replace('/\s+/u', ' ', $text)));
   }
 
   /**
@@ -78,12 +94,21 @@ class GlossaryMatcher {
     }
     // Longer terms first, so "wet food" wins over "food".
     usort($names, fn(string $a, string $b): int => mb_strlen($b) <=> mb_strlen($a));
-    $alternatives = array_map(
-      fn(string $name): string => preg_replace('/\s+/u', '\s+', preg_quote($name, '/')),
-      $names,
-    );
-    // \b is ASCII-only, so use Unicode letter/number lookarounds instead.
-    return '/(?<![\p{L}\p{N}_])(' . implode('|', $alternatives) . ')(?![\p{L}\p{N}_])/iu';
+    $alternatives = array_map($this->buildAlternative(...), $names);
+    return '/(' . implode('|', $alternatives) . ')/iu';
+  }
+
+  /**
+   * Builds the regex for one term, requiring word boundaries where possible.
+   */
+  protected function buildAlternative(string $name): string {
+    $no_space = '/[' . self::NO_SPACE_SCRIPTS . ']/u';
+    // \b is ASCII-only, so use Unicode lookarounds instead. They are skipped
+    // on the side where the term begins/ends in a script without spaces
+    // (e.g. Chinese), since a neighbouring letter is normal there.
+    $before = preg_match($no_space, mb_substr($name, 0, 1)) ? '' : '(?<!' . self::WORD_CHAR . ')';
+    $after = preg_match($no_space, mb_substr($name, -1)) ? '' : '(?!' . self::WORD_CHAR . ')';
+    return $before . preg_replace('/\s+/u', '\s+', preg_quote($name, '/')) . $after;
   }
 
 }

@@ -62,6 +62,8 @@ class GlossaryTooltipFilter extends FilterBase implements ContainerFactoryPlugin
     $dom = Html::load($text);
     $xpath = new \DOMXPath($dom);
     $excluded = implode(' or ', array_map(fn(string $tag): string => "ancestor::$tag", self::SKIP_ELEMENTS));
+    // Never wrap text that is already inside a tooltip.
+    $excluded .= " or ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' glossary-tooltip ')]";
     // Collect nodes first: modifying the DOM while iterating breaks the list.
     $nodes = iterator_to_array($xpath->query("//body//text()[not($excluded)]"));
 
