@@ -8,6 +8,9 @@
 ((Drupal, once) => {
   const MARGIN = 8;
 
+  // The design opens the tooltip below the term on desktop, above on mobile.
+  const mobile = window.matchMedia('(max-width: 767px)');
+
   /**
    * Places the popup above or below the term and keeps it in the viewport.
    *
@@ -25,11 +28,14 @@
     const wrapperRect = tooltip.getBoundingClientRect();
     const width = popup.offsetWidth;
 
-    // Prefer above, as in the design; go below when there is no room.
-    tooltip.classList.toggle(
-      'glossary-tooltip--below',
-      termRect.top < popup.offsetHeight + MARGIN,
-    );
+    // Use the preferred side, unless only the other side has room.
+    const needed = popup.offsetHeight + MARGIN;
+    const roomAbove = termRect.top >= needed;
+    const roomBelow = window.innerHeight - termRect.bottom >= needed;
+    const above = mobile.matches
+      ? roomAbove || !roomBelow
+      : !roomBelow && roomAbove;
+    tooltip.classList.toggle('glossary-tooltip--above', above);
 
     // Centre on the term, then shift back inside the viewport if needed.
     const center = termRect.left + termRect.width / 2;

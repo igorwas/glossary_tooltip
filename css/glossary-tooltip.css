@@ -12,7 +12,8 @@
   --glossary-tooltip-arrow: 50%;
 
   position: relative;
-  display: inline;
+  /* Same height as the term, so the popup sits right next to it. */
+  display: inline-block;
 }
 
 /* Highlighted term: looks like text, behaves like a button. */
@@ -44,13 +45,13 @@
 .glossary-tooltip__popup {
   position: absolute;
   z-index: 100;
-  bottom: 100%;
+  top: 100%;
   left: 50%;
   display: none;
   box-sizing: border-box;
   width: var(--glossary-tooltip-width);
   max-width: calc(100vw - 16px);
-  padding-bottom: var(--glossary-tooltip-gap);
+  padding-top: var(--glossary-tooltip-gap);
   transition:
     opacity 0.2s ease,
     transform 0.2s ease,
@@ -61,11 +62,12 @@
   opacity: 0;
 }
 
-.glossary-tooltip--below .glossary-tooltip__popup {
-  top: 100%;
-  bottom: auto;
-  padding-top: var(--glossary-tooltip-gap);
-  padding-bottom: 0;
+/* Below the term by default, as in the desktop design; JS may flip it. */
+.glossary-tooltip--above .glossary-tooltip__popup {
+  top: auto;
+  bottom: 100%;
+  padding-top: 0;
+  padding-bottom: var(--glossary-tooltip-gap);
 }
 
 /* Open: tapped/clicked, keyboard focus, or mouse hover. Slides in 10px. */
@@ -112,22 +114,22 @@
 /* Arrow pointing at the term. */
 .glossary-tooltip__box::after {
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   left: var(--glossary-tooltip-arrow);
   width: 0;
   height: 0;
   content: "";
   transform: translateX(-50%);
   border: 8px solid transparent;
-  border-top-color: var(--glossary-tooltip-bg);
-  border-bottom: 0;
+  border-top: 0;
+  border-bottom-color: var(--glossary-tooltip-bg);
 }
 
-.glossary-tooltip--below .glossary-tooltip__box::after {
-  top: auto;
-  bottom: 100%;
-  border-top: 0;
-  border-bottom: 8px solid var(--glossary-tooltip-bg);
+.glossary-tooltip--above .glossary-tooltip__box::after {
+  top: 100%;
+  bottom: auto;
+  border-top: 8px solid var(--glossary-tooltip-bg);
+  border-bottom: 0;
 }
 
 .glossary-tooltip__description {
