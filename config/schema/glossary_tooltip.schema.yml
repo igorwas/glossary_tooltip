@@ -1,0 +1,13 @@
+glossary_tooltip.settings:
+  type: config_object
+  label: 'Glossary Tooltip settings'
+  constraints:
+    FullyValidatable: ~
+  mapping:
+    highlight:
+      type: string
+      label: 'Which occurrences of a term to highlight'
+      constraints:
+        Choice:
+          - all
+          - first

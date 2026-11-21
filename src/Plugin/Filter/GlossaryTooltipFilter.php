@@ -6,6 +6,7 @@ namespace Drupal\glossary_tooltip\Plugin\Filter;
 
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Unicode;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
@@ -50,12 +51,18 @@ class GlossaryTooltipFilter extends FilterBase implements ContainerFactoryPlugin
   protected RendererInterface $renderer;
 
   /**
+   * The config factory.
+   */
+  protected ConfigFactoryInterface $configFactory;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
     $instance = new static($configuration, $plugin_id, $plugin_definition);
     $instance->matcher = $container->get(GlossaryMatcher::class);
     $instance->renderer = $container->get('renderer');
+    $instance->configFactory = $container->get('config.factory');
     return $instance;
   }
 
@@ -67,6 +74,10 @@ class GlossaryTooltipFilter extends FilterBase implements ContainerFactoryPlugin
     // Any glossary term change (add, edit, unpublish, delete) must refresh
     // the output, without a cache clear.
     $result->addCacheTags($this->matcher->getCacheTags());
+    // Changing the settings must refresh the output too.
+    $config = $this->configFactory->get('glossary_tooltip.settings');
+    $result->addCacheableDependency($config);
+    $first_only = $config->get('highlight') === 'first';
 
     $pattern = $this->matcher->getPattern();
     if ($pattern === NULL || !preg_match($pattern, strip_tags($text))) {
@@ -82,6 +93,8 @@ class GlossaryTooltipFilter extends FilterBase implements ContainerFactoryPlugin
     $nodes = iterator_to_array($xpath->query("//body//text()[not($excluded)]"));
 
     $found = FALSE;
+    // IDs of terms already highlighted, for "first occurrence only" mode.
+    $seen = [];
     foreach ($nodes as $node) {
       $parts = preg_split($pattern, $node->nodeValue, -1, PREG_SPLIT_DELIM_CAPTURE);
       if (count($parts) < 2) {
@@ -91,8 +104,12 @@ class GlossaryTooltipFilter extends FilterBase implements ContainerFactoryPlugin
       foreach ($parts as $i => $part) {
         // Odd indexes are the captured matches.
         $term = $i % 2 ? $this->matcher->getTerm($part) : NULL;
+        if ($term && $first_only && isset($seen[$term->id()])) {
+          $term = NULL;
+        }
         if ($term) {
           $this->appendHtml($fragment, $this->renderTooltip($part, $term));
+          $seen[$term->id()] = TRUE;
           $found = TRUE;
         }
         elseif ($part !== '') {

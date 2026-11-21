@@ -1,0 +1,4 @@
+administer glossary tooltip:
+  title: 'Administer Glossary Tooltip'
+  description: 'Change how glossary terms are highlighted in content.'
+  restrict access: true
