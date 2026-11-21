@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file
+ * Hook implementations for the Glossary Tooltip module.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function glossary_tooltip_theme(): array {
+  return [
+    'glossary_tooltip' => [
+      'variables' => [
+        'text' => '',
+        'tooltip_id' => '',
+        'description' => '',
+        'url' => NULL,
+      ],
+    ],
+  ];
+}

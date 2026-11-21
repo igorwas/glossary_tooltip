@@ -1,0 +1,32 @@
+{#
+/**
+ * @file
+ * Default theme implementation for a glossary term with a tooltip.
+ *
+ * The term is a button that toggles the popup, so it works on touch devices
+ * and from the keyboard. The popup follows the button in the DOM, so Tab
+ * moves from the term to the "Read more" link.
+ *
+ * Available variables:
+ * - text: The matched term text, as written in the content.
+ * - tooltip_id: Unique ID of the popup.
+ * - description: The term description, already shortened.
+ * - url: The term page URL if the description was shortened, NULL otherwise.
+ *
+ * @ingroup themeable
+ */
+#}
+<span class="glossary-tooltip">
+  <button type="button" class="glossary-tooltip__term" aria-expanded="false" aria-controls="{{ tooltip_id }}" aria-describedby="{{ tooltip_id }}-description">{{ text }}</button>
+  <span class="glossary-tooltip__popup" id="{{ tooltip_id }}">
+    <span class="glossary-tooltip__box">
+      <span class="glossary-tooltip__description" id="{{ tooltip_id }}-description">{{ description }}</span>
+      {% if url %}
+        <a class="glossary-tooltip__link" href="{{ url }}">
+          {{- 'Read more'|t -}}
+          <svg class="glossary-tooltip__icon" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.75H3.75a1 1 0 0 0-1 1v8.5a1 1 0 0 0 1 1h8.5a1 1 0 0 0 1-1V9"/><path d="M9.5 2.75h3.75V6.5M13 3 7.5 8.5"/></svg>
+        </a>
+      {% endif %}
+    </span>
+  </span>
+</span>

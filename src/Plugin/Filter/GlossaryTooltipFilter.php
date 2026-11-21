@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Drupal\glossary_tooltip\Plugin\Filter;
 
 use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\filter\Attribute\Filter;
 use Drupal\filter\FilterProcessResult;
@@ -28,6 +30,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class GlossaryTooltipFilter extends FilterBase implements ContainerFactoryPluginInterface {
 
   /**
+   * Maximum length of the description shown in the tooltip.
+   */
+  public const DESCRIPTION_LENGTH = 100;
+
+  /**
    * Text inside these elements is never replaced.
    */
   protected const SKIP_ELEMENTS = ['a', 'button', 'code', 'pre', 'script', 'style', 'textarea'];
@@ -38,11 +45,17 @@ class GlossaryTooltipFilter extends FilterBase implements ContainerFactoryPlugin
   protected GlossaryMatcher $matcher;
 
   /**
+   * The renderer.
+   */
+  protected RendererInterface $renderer;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
     $instance = new static($configuration, $plugin_id, $plugin_definition);
     $instance->matcher = $container->get(GlossaryMatcher::class);
+    $instance->renderer = $container->get('renderer');
     return $instance;
   }
 
@@ -67,6 +80,7 @@ class GlossaryTooltipFilter extends FilterBase implements ContainerFactoryPlugin
     // Collect nodes first: modifying the DOM while iterating breaks the list.
     $nodes = iterator_to_array($xpath->query("//body//text()[not($excluded)]"));
 
+    $found = FALSE;
     foreach ($nodes as $node) {
       $parts = preg_split($pattern, $node->nodeValue, -1, PREG_SPLIT_DELIM_CAPTURE);
       if (count($parts) < 2) {
@@ -77,7 +91,8 @@ class GlossaryTooltipFilter extends FilterBase implements ContainerFactoryPlugin
         // Odd indexes are the captured matches.
         $term = $i % 2 ? $this->matcher->getTerm($part) : NULL;
         if ($term) {
-          $fragment->appendChild($this->buildTooltip($dom, $part, $term));
+          $this->appendHtml($fragment, $this->renderTooltip($part, $term));
+          $found = TRUE;
         }
         elseif ($part !== '') {
           $fragment->appendChild($dom->createTextNode($part));
@@ -86,35 +101,48 @@ class GlossaryTooltipFilter extends FilterBase implements ContainerFactoryPlugin
       $node->parentNode->replaceChild($fragment, $node);
     }
 
-    $result->setProcessedText(Html::serialize($dom));
+    if ($found) {
+      $result->setProcessedText(Html::serialize($dom));
+      $result->addAttachments(['library' => ['glossary_tooltip/tooltip']]);
+    }
     return $result;
   }
 
   /**
-   * Builds the tooltip markup for a matched term.
+   * Renders the tooltip markup for a matched term.
    */
-  protected function buildTooltip(\DOMDocument $dom, string $text, TermInterface $term): \DOMElement {
-    $id = Html::getUniqueId('glossary-tooltip-' . $term->id());
+  protected function renderTooltip(string $text, TermInterface $term): string {
+    $description = $this->getPlainDescription($term);
+    $truncated = Unicode::truncate($description, self::DESCRIPTION_LENGTH, TRUE, TRUE);
+    $build = [
+      '#theme' => 'glossary_tooltip',
+      '#text' => $text,
+      // Random, so IDs stay unique when cached texts are combined on a page.
+      '#tooltip_id' => 'glossary-tooltip-' . bin2hex(random_bytes(4)),
+      '#description' => $truncated,
+      '#url' => $truncated !== $description ? $term->toUrl()->toString() : NULL,
+    ];
+    $html = (string) $this->renderer->renderInIsolation($build);
+    // Template indentation would otherwise show up as spaces around the term.
+    return preg_replace('/>\s+</', '><', trim($html));
+  }
 
-    $wrapper = $dom->createElement('span');
-    $wrapper->setAttribute('class', 'glossary-tooltip');
+  /**
+   * Returns the term description as plain text on a single line.
+   */
+  protected function getPlainDescription(TermInterface $term): string {
+    $text = Html::decodeEntities(strip_tags($term->getDescription() ?? ''));
+    return trim(preg_replace('/\s+/u', ' ', $text));
+  }
 
-    $trigger = $dom->createElement('button');
-    $trigger->setAttribute('type', 'button');
-    $trigger->setAttribute('class', 'glossary-tooltip__term');
-    $trigger->setAttribute('aria-describedby', $id);
-    $trigger->appendChild($dom->createTextNode($text));
-    $wrapper->appendChild($trigger);
-
-    $description = trim(Html::decodeEntities(strip_tags($term->getDescription() ?? '')));
-    $content = $dom->createElement('span');
-    $content->setAttribute('id', $id);
-    $content->setAttribute('role', 'tooltip');
-    $content->setAttribute('class', 'glossary-tooltip__content');
-    $content->appendChild($dom->createTextNode($description));
-    $wrapper->appendChild($content);
-
-    return $wrapper;
+  /**
+   * Parses an HTML snippet and appends its nodes to a fragment.
+   */
+  protected function appendHtml(\DOMDocumentFragment $fragment, string $html): void {
+    $source = Html::load(trim($html));
+    foreach ($source->getElementsByTagName('body')->item(0)->childNodes as $child) {
+      $fragment->appendChild($fragment->ownerDocument->importNode($child, TRUE));
+    }
   }
 
   /**

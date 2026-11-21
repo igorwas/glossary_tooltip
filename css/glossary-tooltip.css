@@ -1,0 +1,180 @@
+/**
+ * @file
+ * Glossary tooltip styles, based on the "Tooltips Component" design.
+ */
+
+.glossary-tooltip {
+  --glossary-tooltip-accent: #0d7978;
+  --glossary-tooltip-bg: #367878;
+  --glossary-tooltip-color: #fff;
+  --glossary-tooltip-width: 284px;
+  --glossary-tooltip-gap: 10px;
+  --glossary-tooltip-arrow: 50%;
+
+  position: relative;
+  display: inline;
+}
+
+/* Highlighted term: looks like text, behaves like a button. */
+.glossary-tooltip__term {
+  display: inline;
+  margin: 0;
+  padding: 0 1px;
+  cursor: pointer;
+  color: inherit;
+  border: 0;
+  border-bottom: 1px solid var(--glossary-tooltip-accent);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--glossary-tooltip-accent) 10%, transparent);
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: inherit;
+}
+
+.glossary-tooltip__term:focus-visible {
+  outline: 2px solid var(--glossary-tooltip-accent);
+  outline-offset: 2px;
+}
+
+/*
+ * The popup's transparent padding bridges the gap to the term, so the mouse
+ * can move onto the "Read more" link without the popup closing. Closed popups
+ * use display: none, so they never widen the page on small screens.
+ */
+.glossary-tooltip__popup {
+  position: absolute;
+  z-index: 100;
+  bottom: 100%;
+  left: 50%;
+  display: none;
+  box-sizing: border-box;
+  width: var(--glossary-tooltip-width);
+  max-width: calc(100vw - 16px);
+  padding-bottom: var(--glossary-tooltip-gap);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    display 0.2s allow-discrete;
+  transform: translate(var(--glossary-tooltip-x, -50%), -10px);
+  text-align: start;
+  white-space: normal;
+  opacity: 0;
+}
+
+.glossary-tooltip--below .glossary-tooltip__popup {
+  top: 100%;
+  bottom: auto;
+  padding-top: var(--glossary-tooltip-gap);
+  padding-bottom: 0;
+}
+
+/* Open: tapped/clicked, keyboard focus, or mouse hover. Slides in 10px. */
+.glossary-tooltip.is-open .glossary-tooltip__popup,
+.glossary-tooltip:has(:focus-visible) .glossary-tooltip__popup {
+  display: block;
+  transform: translate(var(--glossary-tooltip-x, -50%), 0);
+  opacity: 1;
+
+  @starting-style {
+    transform: translate(var(--glossary-tooltip-x, -50%), -10px);
+    opacity: 0;
+  }
+}
+
+@media (hover: hover) {
+  .glossary-tooltip:hover .glossary-tooltip__popup {
+    display: block;
+    transform: translate(var(--glossary-tooltip-x, -50%), 0);
+    opacity: 1;
+
+    @starting-style {
+      transform: translate(var(--glossary-tooltip-x, -50%), -10px);
+      opacity: 0;
+    }
+  }
+}
+
+/* Closed with Escape: stays hidden until the pointer or focus leaves. */
+.glossary-tooltip.is-dismissed .glossary-tooltip__popup {
+  display: none;
+}
+
+.glossary-tooltip__box {
+  position: relative;
+  display: block;
+  padding: 16px 24px;
+  color: var(--glossary-tooltip-color);
+  border-radius: 6px;
+  background: var(--glossary-tooltip-bg);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.25);
+}
+
+/* Arrow pointing at the term. */
+.glossary-tooltip__box::after {
+  position: absolute;
+  top: 100%;
+  left: var(--glossary-tooltip-arrow);
+  width: 0;
+  height: 0;
+  content: "";
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: var(--glossary-tooltip-bg);
+  border-bottom: 0;
+}
+
+.glossary-tooltip--below .glossary-tooltip__box::after {
+  top: auto;
+  bottom: 100%;
+  border-top: 0;
+  border-bottom: 8px solid var(--glossary-tooltip-bg);
+}
+
+.glossary-tooltip__description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  font-family: Roboto, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  overflow-wrap: break-word;
+}
+
+/* Two classes, to win over theme rules such as Olivero's ".text-content a". */
+.glossary-tooltip__box .glossary-tooltip__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  text-decoration: none;
+  color: var(--glossary-tooltip-color);
+  box-shadow: none;
+  font-family: "Roboto Slab", Georgia, serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.glossary-tooltip__box .glossary-tooltip__link:hover,
+.glossary-tooltip__box .glossary-tooltip__link:focus {
+  text-decoration: underline;
+  color: var(--glossary-tooltip-color);
+  box-shadow: none;
+}
+
+.glossary-tooltip__box .glossary-tooltip__link:focus-visible {
+  outline: 2px solid var(--glossary-tooltip-color);
+  outline-offset: 2px;
+}
+
+.glossary-tooltip__icon {
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glossary-tooltip__popup {
+    transition: none;
+  }
+}

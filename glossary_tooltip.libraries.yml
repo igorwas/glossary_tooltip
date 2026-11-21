@@ -1,0 +1,22 @@
+tooltip:
+  css:
+    component:
+      css/glossary-tooltip.css: {}
+  js:
+    js/glossary-tooltip.js: {}
+  dependencies:
+    - core/drupal
+    - core/once
+    - glossary_tooltip/fonts
+
+# Fonts from the design. Override or remove this library in a theme
+# (libraries-override) to use the site's own fonts instead.
+fonts:
+  remote: https://fonts.google.com/
+  license:
+    name: SIL Open Font License 1.1
+    url: https://openfontlicense.org/
+    gpl-compatible: true
+  css:
+    theme:
+      'https://fonts.googleapis.com/css2?family=Roboto:wght@400&family=Roboto+Slab:wght@500&display=swap': { type: external }
