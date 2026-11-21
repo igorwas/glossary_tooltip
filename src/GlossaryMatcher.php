@@ -68,6 +68,16 @@ class GlossaryMatcher {
   }
 
   /**
+   * Returns cache tags invalidated when any glossary term changes.
+   *
+   * @return string[]
+   *   The cache tags.
+   */
+  public function getCacheTags(): array {
+    return $this->entityTypeManager->getDefinition('taxonomy_term')->getBundleListCacheTags(self::VOCABULARY);
+  }
+
+  /**
    * Returns the term for a matched string.
    */
   public function getTerm(string $match): ?TermInterface {

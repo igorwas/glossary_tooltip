@@ -64,8 +64,9 @@ class GlossaryTooltipFilter extends FilterBase implements ContainerFactoryPlugin
    */
   public function process($text, $langcode): FilterProcessResult {
     $result = new FilterProcessResult($text);
-    // Any term change (add, edit, unpublish, delete) must refresh the output.
-    $result->addCacheTags(['taxonomy_term_list']);
+    // Any glossary term change (add, edit, unpublish, delete) must refresh
+    // the output, without a cache clear.
+    $result->addCacheTags($this->matcher->getCacheTags());
 
     $pattern = $this->matcher->getPattern();
     if ($pattern === NULL || !preg_match($pattern, strip_tags($text))) {
