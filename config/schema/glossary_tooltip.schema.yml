@@ -9,5 +9,6 @@ glossary_tooltip.settings:
       label: 'Which occurrences of a term to highlight'
       constraints:
         Choice:
-          - all
-          - first
+          choices:
+            - all
+            - first

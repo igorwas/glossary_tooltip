@@ -68,6 +68,13 @@ class GlossaryMatcher {
   }
 
   /**
+   * Forgets the loaded terms, so the next call loads them again.
+   */
+  public function reset(): void {
+    $this->terms = NULL;
+  }
+
+  /**
    * Returns cache tags invalidated when any glossary term changes.
    *
    * @return string[]
