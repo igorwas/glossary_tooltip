@@ -1,0 +1,8 @@
+langcode: en
+status: true
+dependencies: {  }
+name: Glossary
+vid: glossary
+description: 'Terms that are highlighted with a tooltip when they appear in content.'
+weight: 0
+new_revision: false

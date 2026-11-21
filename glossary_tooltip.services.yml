@@ -1,0 +1,5 @@
+services:
+  glossary_tooltip.matcher:
+    class: Drupal\glossary_tooltip\GlossaryMatcher
+    arguments: ['@entity_type.manager']
+  Drupal\glossary_tooltip\GlossaryMatcher: '@glossary_tooltip.matcher'

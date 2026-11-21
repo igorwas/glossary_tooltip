@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the Glossary Tooltip module.
+ */
+
+use Drupal\filter\Entity\FilterFormat;
+
+/**
+ * Implements hook_install().
+ */
+function glossary_tooltip_install(bool $is_syncing): void {
+  if ($is_syncing) {
+    return;
+  }
+  // Enable the filter in the common HTML formats, if they exist. It runs last
+  // so that filter_html does not strip the tooltip markup.
+  foreach (['basic_html', 'full_html'] as $format_id) {
+    $format = FilterFormat::load($format_id);
+    if ($format) {
+      $format->setFilterConfig('glossary_tooltip', [
+        'status' => TRUE,
+        'weight' => 20,
+      ]);
+      $format->save();
+    }
+  }
+}
